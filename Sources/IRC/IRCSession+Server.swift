@@ -13,6 +13,7 @@ public class IRCSessionServer: IRCSession {
     public var buffer = ""
     public var isConnected = false
     public var isAuthenticated = false
+    public var isRegistered = false
     public var error: IRCSessionError? = nil
 
     private var connection: NWConnection? = nil
@@ -84,6 +85,15 @@ public class IRCSessionServer: IRCSession {
             try await send("CAP END")
             try await send("NICK \(server.config.nick)")
             try await send("USER \(server.config.ident ?? server.config.username) 0 * :\(server.config.realname ?? "-")")
+
+            // Check if registered
+            try await send("PRIVMSG NickServ :INFO \(server.config.nick)") { message in
+                if case let .NOTICE(_, text) = message.command {
+                    self.isRegistered = !text.contains("not registered")
+                    return true
+                }
+                return false
+            }
 
             // Rejoin channels
             for channel in server.channels {
