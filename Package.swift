@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "IRC",
+    name: "swift-irc",
     platforms: [
         .iOS(.v18),
         .macOS(.v15),
