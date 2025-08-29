@@ -1,7 +1,7 @@
 import Foundation
 import SharedKit
 
-public struct Config: Codable, Sendable {
+public struct Config: Codable, Equatable, Sendable {
     public var kind: Kind
     public var server: String
     public var port: UInt16
