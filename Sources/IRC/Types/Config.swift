@@ -5,6 +5,7 @@ public struct Config: Codable, Sendable {
     public var kind: Kind
     public var server: String
     public var port: UInt16
+    public var useTLS: Bool
 
     /// The user's primary handle on IRC:  <nick>!<ident>@<host>
     public var nick: String
@@ -47,7 +48,7 @@ public struct Config: Codable, Sendable {
     }
 
 
-    public init(kind: Kind = .network, server: String, port: UInt16, nick: String, ident: String? = nil,
+    public init(kind: Kind = .network, server: String, port: UInt16, useTLS: Bool = true, nick: String, ident: String? = nil,
                 username: String, host: String? = nil, realname: String? = nil, email: String? = nil,
                 password: String? = nil, modes: String? = nil, motd: String? = nil, capabilities: [String : Bool] = [:],
                 availableUserModes: String? = nil, availableChannelModes: String? = nil,
@@ -55,6 +56,7 @@ public struct Config: Codable, Sendable {
         self.kind = kind
         self.server = server
         self.port = port
+        self.useTLS = useTLS
         self.nick = nick
         self.ident = ident
         self.username = username

@@ -29,13 +29,16 @@ public class IRCSessionServer: IRCSession {
 
         let host = server.config.server
         let port = NWEndpoint.Port(integerLiteral: server.config.port)
-
-        let tls = handleTLS(host)
-
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
 
-        let params = NWParameters(tls: tls, tcp: tcp)
+        let params: NWParameters
+        if server.config.useTLS {
+            let tls = handleTLS(host)
+            params = NWParameters(tls: tls, tcp: tcp)
+        } else {
+            params = NWParameters(tls: nil, tcp: tcp)
+        }
 
         let endpoint = NWEndpoint.hostPort(host: .init(host), port: port)
         connection = NWConnection(to: endpoint, using: params)
