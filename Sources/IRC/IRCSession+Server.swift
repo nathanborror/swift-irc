@@ -27,8 +27,18 @@ public class IRCSessionServer: IRCSession {
     public func connect() async throws {
         clearLogs()
 
-        let endpoint = NWEndpoint.hostPort(host: .init(server.config.server), port: .init(integerLiteral: server.config.port))
-        connection = NWConnection(to: endpoint, using: .tcp)
+        let host = server.config.server
+        let port = NWEndpoint.Port(integerLiteral: server.config.port)
+
+        let tls = handleTLS(host)
+
+        let tcp = NWProtocolTCP.Options()
+        tcp.noDelay = true
+
+        let params = NWParameters(tls: tls, tcp: tcp)
+
+        let endpoint = NWEndpoint.hostPort(host: .init(host), port: port)
+        connection = NWConnection(to: endpoint, using: params)
         connection?.stateUpdateHandler = { [weak self] state in
             guard let self else { return }
             Task {
@@ -55,6 +65,16 @@ public class IRCSessionServer: IRCSession {
             guard let error else { return }
             logger.error("\(error)")
         })
+    }
+
+    // Private
+
+    private func handleTLS(_ host: String) -> NWProtocolTLS.Options {
+        let options = NWProtocolTLS.Options()
+        sec_protocol_options_set_tls_server_name(options.securityProtocolOptions, host)
+        sec_protocol_options_set_peer_authentication_required(options.securityProtocolOptions, true)
+        sec_protocol_options_set_min_tls_protocol_version(options.securityProtocolOptions, .TLSv12)
+        return options
     }
 
     private func handleStateUpdate(state: NWConnection.State) async throws {
