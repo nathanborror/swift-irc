@@ -17,6 +17,7 @@ public class IRCSessionServer: IRCSession {
     public var error: IRCSessionError? = nil
 
     private var connection: NWConnection? = nil
+    private var writeQueue: IRCWriteQueue? = nil
     private var incomingDataBuffer = ""
     private var motdBuffer = ""
 
@@ -41,8 +42,8 @@ public class IRCSessionServer: IRCSession {
         }
 
         let endpoint = NWEndpoint.hostPort(host: .init(host), port: port)
-        connection = NWConnection(to: endpoint, using: params)
-        connection?.stateUpdateHandler = { [weak self] state in
+        let connection = NWConnection(to: endpoint, using: params)
+        connection.stateUpdateHandler = { [weak self] state in
             guard let self else { return }
             Task {
                 do {
@@ -52,22 +53,20 @@ public class IRCSessionServer: IRCSession {
                 }
             }
         }
-        connection?.start(queue: .main)
+        connection.start(queue: .main)
+        self.connection = connection
+        self.writeQueue = .init(conn: connection)
     }
 
     public func disconnect() async throws {
         connection?.cancel()
+        writeQueue = nil
         connection = nil
         isConnected = false
     }
 
     public func send(_ line: String) async throws {
-        let line = line+"\r\n"
-        guard let data = line.data(using: .utf8) else { return }
-        connection?.send(content: data, completion: .contentProcessed { error in
-            guard let error else { return }
-            logger.error("\(error)")
-        })
+        try await writeQueue?.send(line: line+"\r\n")
     }
 
     // Private
@@ -147,6 +146,27 @@ public class IRCSessionServer: IRCSession {
                     self.handleListen()
                 }
             }
+        }
+    }
+}
+
+actor IRCWriteQueue {
+    private let conn: NWConnection
+
+    init(conn: NWConnection) {
+        self.conn = conn
+    }
+
+    func send(line: String) async throws {
+        let data = line.data(using: .utf8)!
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            conn.send(content: data, completion: .contentProcessed({ error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }))
         }
     }
 }
