@@ -62,7 +62,7 @@ public class IRCSessionServer: IRCSession {
     }
 
     public func send(_ line: String) async throws {
-        let line = line+"\n"
+        let line = line+"\r\n"
         guard let data = line.data(using: .utf8) else { return }
         connection?.send(content: data, completion: .contentProcessed { error in
             guard let error else { return }

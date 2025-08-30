@@ -233,9 +233,9 @@ extension IRCSession {
 
     public func processIncomingString(_ input: String?) async throws {
         guard let input else { return }
-        buffer += input.replacingOccurrences(of: "\r\n", with: "\n")
+        buffer += input
 
-        while let range = buffer.range(of: "\n") {
+        while let range = buffer.range(of: "\r\n") {
             let line = String(buffer[..<range.lowerBound])
             buffer = String(buffer[range.upperBound...]) // Remove parsed line + delimiter
 
@@ -410,7 +410,7 @@ extension IRCSession {
         case let .RPL_NAMREPLY(_, _, channel, nicks):
             try upsertChannelNicks(nicks, channelID: channel)
         case let .RPL_MOTD(_, text):
-            let motd = text.trimmingPrefix("- ") + "\n"
+            let motd = text.trimmingPrefix("- ") + "\r\n"
             server.config.motd = (server.config.motd ?? "" + motd)
         case .RPL_MOTDSTART:
             server.config.motd = ""

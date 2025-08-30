@@ -20,7 +20,7 @@ struct MessageParsingTests {
         ]
 
         try await alice.connect()
-        try await alice.processIncomingString(expected.joined(separator: "\n")+"\n")
+        try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
 
         #expect(alice.server.config.host == "ergo.test")
         #expect(alice.server.config.availableUserModes == "BERTZios")
@@ -43,7 +43,7 @@ struct MessageParsingTests {
         ]
 
         try await alice.channelJoin(name)
-        try await alice.processIncomingString(expected.joined(separator: "\n")+"\n")
+        try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
         let channel = try alice.getChannel(name)
@@ -78,7 +78,7 @@ struct MessageParsingTests {
             ":ergo.test 341 alice bob \(name)",
         ]
         try await alice.channelJoin(name)
-        try await alice.processIncomingString(expected.joined(separator: "\n")+"\n")
+        try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
         let channel = try alice.getChannel(name)
@@ -96,7 +96,7 @@ struct MessageParsingTests {
             ":ergo.test 324 bob \(name) +kCnst s3cr3t",
             ":ergo.test 329 bob \(name) 1751134868",
         ]
-        try await bob.processIncomingString(expectedForBob.joined(separator: "\n")+"\n")
+        try await bob.processIncomingString(expectedForBob.joined(separator: "\r\n")+"\r\n")
         #expect(bob.server.channels.count == 1)
 
         let bobChannel = try bob.getChannel(name)
@@ -117,7 +117,7 @@ struct MessageParsingTests {
             ":ergo.test 324 alice \(name) +Cnt",
             ":ergo.test 329 alice \(name) 1751134868",
             ":alice!~u@p7wgw3kynvpai.irc KICK #general bob :bye",
-        ].joined(separator: "\n")+"\n")
+        ].joined(separator: "\r\n")+"\r\n")
 
         #expect(alice.server.channels.count == 1)
 
@@ -132,7 +132,7 @@ struct MessageParsingTests {
             ":ergo.test 324 bob \(name) +Cnt",
             ":ergo.test 329 bob \(name) 1751134868",
             ":alice!~u@p7wgw3kynvpai.irc KICK #general bob :bye",
-        ].joined(separator: "\n")+"\n")
+        ].joined(separator: "\r\n")+"\r\n")
 
         #expect(bob.server.channels.count == 0)
     }
@@ -150,7 +150,7 @@ struct MessageParsingTests {
             ":ergo.test 329 alice \(name) 1751134868",
             ":bob!~u@p7wgw3kynvpai.irc JOIN \(name)",
         ]
-        try await alice.processIncomingString(expected.joined(separator: "\n")+"\n")
+        try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
         let channel = alice.server.channels[0]
@@ -167,7 +167,7 @@ struct MessageParsingTests {
             ":ergo.test 324 alice #general +Cnt",
             ":ergo.test 329 alice #general 1751134868",
             ":alice!~u@p7wgw3kynvpai.irc NICK charlie",
-        ].joined(separator: "\n")+"\n")
+        ].joined(separator: "\r\n")+"\r\n")
 
         let channel = try alice.getChannel("#general")
         #expect(channel.users.count == 1)
