@@ -88,44 +88,7 @@ public class IRCSessionServer: IRCSession {
         switch state {
         case .ready:
             isConnected = true
-
-            // Start listening immediatly
             handleListen()
-
-            // Request capabilities
-            try await send("CAP LS 302") { message in
-                if case .CAP = message.command {
-                    return true
-                }
-                return false
-            }
-
-            // TODO: Check before requiring
-            // draft/chathistory sasl
-
-            try await send("CAP REQ :echo-message server-time message-tags batch labeled-response") { message in
-                if case .CAP = message.command {
-                    return message.params.contains("ACK")
-                }
-                return false
-            }
-            try await send("CAP END")
-            try await send("NICK \(server.config.nick)")
-            try await send("USER \(server.config.ident ?? server.config.username) 0 * :\(server.config.realname ?? "-")")
-
-            // Check if registered
-            try await send("PRIVMSG NickServ :INFO \(server.config.nick)") { message in
-                if case let .NOTICE(_, text) = message.command {
-                    self.isRegistered = !text.contains("not registered")
-                    return true
-                }
-                return false
-            }
-
-            // Rejoin channels
-            for channel in server.channels {
-                try await channelJoin(channel.id)
-            }
         case .failed(let error):
             self.error = .unhandled(error)
             try await disconnect()
