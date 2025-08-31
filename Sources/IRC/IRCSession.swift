@@ -523,7 +523,7 @@ extension IRCSession {
     }
 
     private func commandFAIL_NICKNAME_RESERVED(_ nick: String) async throws {
-        let newNick = nick + "_"
-        try await send("NICK \(newNick)")
+        server.config.nick = nick + "_"
+        try await send("NICK \(server.config.nick)")
     }
 }
