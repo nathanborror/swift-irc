@@ -108,6 +108,13 @@ public enum Command: Codable, Equatable, Sendable {
     case USERHOST
     case WALLOPS
 
+    // MARK: Failures
+
+    /// The FAIL message indicates a complete failure to process a given command/function, or simply some error about the current session that clients
+    /// should be aware of.
+    /// Parameters: FAIL <command> <code> [<context>...] <description>
+    case FAIL(command: String, code: [String], text: String)
+
     public init?(_ command: String, params: [String]) {
         switch command {
         case "CAP":
@@ -205,6 +212,10 @@ public enum Command: Codable, Equatable, Sendable {
             self = .USERHOST
         case "WALLOPS":
             self = .WALLOPS
+        case "FAIL":
+            guard params.count >= 2 else { return nil }
+            let code = Array(params.dropFirst().dropLast())
+            self = .FAIL(command: params[0], code: code, text: params.last ?? "")
         default:
             return nil
         }

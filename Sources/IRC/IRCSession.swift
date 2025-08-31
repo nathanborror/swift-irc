@@ -362,6 +362,8 @@ extension IRCSession {
             break
         case .WALLOPS:
             break
+        case let .FAIL(command, code, text):
+            try await commandFAIL(command, code: code, text: text)
         }
     }
 
@@ -507,5 +509,21 @@ extension IRCSession {
             // TODO: Implement private direct messages
             print("[target: \(target)] not implemented")
         }
+    }
+
+    private func commandFAIL(_ command: String, code: [String], text: String) async throws {
+        switch command {
+        case "NICK":
+            if let subcommdand = code.first, subcommdand == "NICKNAME_RESERVED" {
+                try await commandFAIL_NICKNAME_RESERVED(code[1])
+            }
+        default:
+            break
+        }
+    }
+
+    private func commandFAIL_NICKNAME_RESERVED(_ nick: String) async throws {
+        let newNick = nick + "_"
+        try await send("NICK \(newNick)")
     }
 }
