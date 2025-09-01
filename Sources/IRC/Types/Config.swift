@@ -1,7 +1,7 @@
 import Foundation
 import SharedKit
 
-public struct Config: Codable, Equatable, Sendable {
+public struct Config: Codable, Identifiable, Equatable, Sendable {
     public var kind: Kind
     public var server: String
     public var port: UInt16
@@ -47,6 +47,9 @@ public struct Config: Codable, Equatable, Sendable {
         case simulation
     }
 
+    public var id: String {
+        "\(nick)@\(server)"
+    }
 
     public init(kind: Kind = .network, server: String, port: UInt16, useTLS: Bool = true, nick: String, ident: String? = nil,
                 username: String, host: String? = nil, realname: String? = nil, email: String? = nil,
