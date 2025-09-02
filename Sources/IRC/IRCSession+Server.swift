@@ -9,7 +9,7 @@ private let logger = Logger(subsystem: "IRCServerSession", category: "IRC")
 public class IRCSessionServer: IRCSession {
 
     public var server: Server
-    public var pending: [String: IRCPendingRequest] = [:]
+    public var registry = WaitRegistry()
     public var buffer = ""
     public var isConnected = false
     public var isAuthenticated = false
@@ -17,6 +17,7 @@ public class IRCSessionServer: IRCSession {
     public var error: IRCSessionError? = nil
 
     private var connection: NWConnection? = nil
+    private var connectionQueue = DispatchQueue(label: "irc.wire", qos: .userInitiated)
     private var incomingDataBuffer = ""
     private var motdBuffer = ""
 
@@ -52,17 +53,20 @@ public class IRCSessionServer: IRCSession {
                 }
             }
         }
-        connection?.start(queue: .main)
+        connection?.start(queue: connectionQueue)
     }
 
     public func disconnect() async throws {
         connection?.cancel()
         connection = nil
         isConnected = false
+        await registry.cancelAll(IRCSessionError.disconnected)
     }
 
     public func send(_ line: String) async throws {
-        guard let connection, let data = "\(line)\r\n".data(using: .utf8) else { return }
+        guard let connection, let data = "\(line)\r\n".data(using: .utf8) else {
+            throw IRCSessionError.unhandled(EncodingError.invalidValue(line, .init(codingPath: [], debugDescription: "utf8")))
+        }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             connection.send(content: data, completion: .contentProcessed({ error in
                 if let error {
@@ -72,6 +76,13 @@ public class IRCSessionServer: IRCSession {
                 }
             }))
         }
+    }
+
+    public func send(_ line: String, expecting: @escaping @Sendable (Message) -> Bool, timeout: TimeInterval) async throws -> Message {
+        try await self.registry.sendAndWait(performSend: { [weak self] in
+            guard let self else { throw CancellationError() }
+            try await self.send(line)
+        }, expecting: expecting, timeout: .seconds(timeout))
     }
 
     // Private
@@ -88,11 +99,13 @@ public class IRCSessionServer: IRCSession {
         switch state {
         case .ready:
             isConnected = true
-            handleListen()
+            await handleListen()
         case .failed(let error):
             self.error = .unhandled(error)
+            await registry.cancelAll(error)
             try await disconnect()
         case .cancelled:
+            await registry.cancelAll(IRCSessionError.cancelled)
             try await disconnect()
         case .preparing:
             logger.info("preparing")
@@ -101,17 +114,17 @@ public class IRCSessionServer: IRCSession {
         }
     }
 
-    private func handleListen() {
-        connection?.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
+    private func handleListen() async {
+        connection?.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
             guard let self else { return }
-            Task { @MainActor in
+            Task {
                 do {
-                    try await processIncomingData(data)
+                    try await self.processIncomingData(data)
                 } catch {
                     print(error)
                 }
                 if error == nil {
-                    self.handleListen()
+                    await self.handleListen()
                 }
             }
         }

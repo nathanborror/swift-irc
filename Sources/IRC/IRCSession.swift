@@ -8,7 +8,10 @@ public enum IRCSessionError: Error, CustomStringConvertible {
     case channelNotFound
     case channelMemberNotFound
     case authenticationFailed
+    case registryLimitReached
     case timeout
+    case cancelled
+    case disconnected
     case unhandled(Error)
 
     public var description: String {
@@ -19,8 +22,14 @@ public enum IRCSessionError: Error, CustomStringConvertible {
             "Channel member not found"
         case .authenticationFailed:
             "Authentication failed"
+        case .registryLimitReached:
+            "Registry limit reached"
         case .timeout:
             "Timeout"
+        case .cancelled:
+            "Connection cancelled"
+        case .disconnected:
+            "Connection disconnected"
         case .unhandled(let error):
             "Unhandled error: \(error)"
         }
@@ -37,7 +46,7 @@ public struct IRCPendingRequest {
 public protocol IRCSession: AnyObject {
 
     var server: Server { get set }
-    var pending: [String: IRCPendingRequest] { get set }
+    var registry: WaitRegistry { get }
     var buffer: String { get set }
     var isConnected: Bool { get }
     var isAuthenticated: Bool { get }
@@ -46,40 +55,30 @@ public protocol IRCSession: AnyObject {
     func connect() async throws
     func disconnect() async throws
     func send(_ line: String) async throws
+    func send(_ line: String, expecting: @escaping @Sendable (Message) -> Bool, timeout: TimeInterval) async throws -> Message
 }
 
 // MARK: Conevenience
 
 extension IRCSession {
 
-    public func send(_ line: String, expecting: @escaping (Message) -> Bool, timeout: TimeInterval = 10) async throws {
-        try await withCheckedThrowingContinuation { continuation in
-            let id = String.id
-
-            // Update pending requests queue
-            pending[id] = .init(
-                continuation: continuation,
-                expectedResponse: expecting,
-                timeout: .now.addingTimeInterval(timeout)
-            )
-
-            // Send line to server
-            Task {
-                try await send(line)
-            }
-
-            // Wait for possible timeout, remove request from queue upon timeout
-            Task {
-                try await Task.sleep(for: .seconds(timeout))
-                if let request = pending.removeValue(forKey: id) {
-                    request.continuation.resume(throwing: IRCSessionError.timeout)
-                }
-            }
-        }
-    }
-
     public func channelJoin(_ channel: String, fetchHistory: Bool = false) async throws {
-        try await send("JOIN \(channel)")
+
+        _ = try await send("JOIN \(channel)", expecting: { (m: Message) -> Bool in
+            switch (m.command, m.numeric) {
+            case (.some(.JOIN(let ch)), _):
+                return ch == channel
+            case (_, .some(.RPL_NAMREPLY(_, _, let ch, _))):
+                return ch == channel
+            case (_, .some(.RPL_ENDOFNAMES(_, let ch, _))):
+                return ch == channel
+            case (_, .some(.ERR_INVITEONLYCHAN(_, let ch, _))):
+                return ch == channel
+            default:
+                return false
+            }
+        }, timeout: 10)
+
         try await send("WHO \(channel)")
         try await send("MODE \(channel)")
 
@@ -247,15 +246,9 @@ extension IRCSession {
             }
 
             // Check pending requests
-            for (id, request) in pending {
-                if request.expectedResponse(message) {
-                    pending.removeValue(forKey: id)
-                    request.continuation.resume()
-                    break
-                }
-            }
+            await registry.deliver(message)
 
-            // Respond to periodic PINGs to maintain the connection
+            // Connection maintenance
             switch message.command {
             case .PING:
                 let pong = "PONG \(message.params[0])"

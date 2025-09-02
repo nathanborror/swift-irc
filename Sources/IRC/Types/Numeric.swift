@@ -378,8 +378,10 @@ public enum Numeric: Codable, Equatable, Sendable {
     /// # 472:
     case ERR_UNKNOWNMODE
 
-    /// # 473:
-    case ERR_INVITEONLYCHAN
+    /// # 473: <client> <channel> :Cannot join channel (+i)
+    /// Returned to indicate that a JOIN command failed because the channel is set to [invite-only] mode and the client has not been invited to the channel or
+    /// had an invite exception set for them. The text used in the last param of this message may vary.
+    case ERR_INVITEONLYCHAN(client: String, channel: String, text: String)
 
     /// # 474:
     case ERR_BANNEDFROMCHAN
@@ -673,7 +675,8 @@ public enum Numeric: Codable, Equatable, Sendable {
         case 472:
             self = .ERR_UNKNOWNMODE
         case 473:
-            self = .ERR_INVITEONLYCHAN
+            guard params.count >= 3 else { return nil }
+            self = .ERR_INVITEONLYCHAN(client: params[0], channel: params[1], text: params[2])
         case 474:
             self = .ERR_BANNEDFROMCHAN
         case 475:

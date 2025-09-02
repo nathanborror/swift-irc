@@ -7,7 +7,7 @@ public class IRCMockSession: IRCSession {
 
     public var server: Server
     public var buffer = ""
-    public var pending: [String: IRCPendingRequest] = [:]
+    public var registry = WaitRegistry()
 
     public var isConnected = false
     public var isAuthenticated = false
@@ -20,8 +20,18 @@ public class IRCMockSession: IRCSession {
     public func connect() async throws {}
     public func disconnect() async throws {}
 
-    public func send(_ line: String) async throws {}
-    public func send(_ line: String, expecting: @escaping (Message) -> Bool, timeout: TimeInterval = 10) async throws {}
+    public func send(_ line: String) async throws {
+        print("not implemented")
+    }
+
+    public func send(_ line: String, expecting: @escaping (Message) -> Bool, timeout: TimeInterval = 10) async throws {
+        print("not implemented")
+    }
+
+    public func send(_ line: String, expecting: @escaping (Message) -> Bool, timeout: TimeInterval) async throws -> Message {
+        print("not implemented")
+        return .init(kind: .server, raw: "")
+    }
 }
 
 extension IRCMockSession {
