@@ -107,15 +107,11 @@ extension IRCSession {
 
     public func channelJoin(_ channel: String, fetchHistory: Bool = false) async throws {
         try await send("JOIN \(channel)") { message -> Bool in
-            switch (message.command, message.numeric) {
-            case (.some(.JOIN(let ch)), _):
-                return ch == channel
-            case (_, .some(.RPL_NAMREPLY(_, _, let ch, _))):
-                return ch == channel
-            case (_, .some(.RPL_ENDOFNAMES(_, let ch, _))):
-                return ch == channel
-            case (_, .some(.ERR_INVITEONLYCHAN(_, let ch, _))):
-                return ch == channel
+            switch message.numeric {
+            case let .RPL_NAMREPLY(_, _, name, _):
+                return name == channel
+            case let .RPL_ENDOFNAMES(_, name, _):
+                return name == channel
             default:
                 return false
             }
