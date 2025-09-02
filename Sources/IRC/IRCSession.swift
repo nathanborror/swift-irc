@@ -43,7 +43,7 @@ public struct IRCPendingRequest {
 }
 
 @MainActor
-public protocol IRCSession: AnyObject {
+public protocol IRCSession: AnyObject, Sendable {
 
     var server: Server { get set }
     var registry: WaitRegistry { get }
@@ -55,17 +55,24 @@ public protocol IRCSession: AnyObject {
     func connect() async throws
     func disconnect() async throws
     func send(_ line: String) async throws
-    func send(_ line: String, expecting: @escaping @Sendable (Message) -> Bool, timeout: TimeInterval) async throws -> Message
 }
 
 // MARK: Conevenience
 
 extension IRCSession {
 
+    @discardableResult
+    public func send(_ line: String, expecting: @escaping @Sendable (Message) -> Bool, timeout: TimeInterval = 10) async throws -> Message {
+        try await self.registry.sendAndWait(performSend: { [weak self] in
+            guard let self else { throw CancellationError() }
+            try await self.send(line)
+        }, expecting: expecting, timeout: .seconds(timeout))
+    }
+
     public func channelJoin(_ channel: String, fetchHistory: Bool = false) async throws {
 
-        _ = try await send("JOIN \(channel)", expecting: { (m: Message) -> Bool in
-            switch (m.command, m.numeric) {
+        try await send("JOIN \(channel)") { message -> Bool in
+            switch (message.command, message.numeric) {
             case (.some(.JOIN(let ch)), _):
                 return ch == channel
             case (_, .some(.RPL_NAMREPLY(_, _, let ch, _))):
@@ -77,7 +84,7 @@ extension IRCSession {
             default:
                 return false
             }
-        }, timeout: 10)
+        }
 
         try await send("WHO \(channel)")
         try await send("MODE \(channel)")
