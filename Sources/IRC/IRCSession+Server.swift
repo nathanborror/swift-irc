@@ -78,7 +78,8 @@ public class IRCSessionServer: IRCSession {
         }
     }
 
-    public func send(_ line: String, expecting: @escaping @Sendable (Message) -> Bool, timeout: TimeInterval) async throws -> Message {
+    @discardableResult
+    public func send(_ line: String, expecting: @escaping @Sendable (Message) -> Bool, timeout: TimeInterval = 10) async throws -> Message {
         try await self.registry.sendAndWait(performSend: { [weak self] in
             guard let self else { throw CancellationError() }
             try await self.send(line)
