@@ -425,6 +425,16 @@ public enum Numeric: Codable, Equatable, Sendable {
     /// # 723:
     case ERR_NOPRIVS
 
+    /// # 900: <client> <nick>!<user>@<host> <account> :You are now logged in as <username>
+    /// This numeric indicates that the client was logged into the specified account (whether by SASL authentication or otherwise). For more information on this
+    /// numeric, see the IRCv3 sasl-3.1 extension. The text used in the last param of this message varies wildly.
+    case RPL_LOGGEDIN(client: String, text: String)
+
+    /// # 901: <client> <nick>!<user>@<host> :You are now logged out
+    /// This numeric indicates that the client was logged out of their account. For more information on this numeric, see the IRCv3 sasl-3.1 extension. The text
+    /// used in the last param of this message varies wildly.
+    case RPL_LOGGEDOUT(client: String, text: String)
+
     /// # 902:
     case ERR_NICKLOCKED
 
@@ -711,6 +721,12 @@ public enum Numeric: Codable, Equatable, Sendable {
             self = .ERR_INVALIDMODEPARAM
         case 723:
             self = .ERR_NOPRIVS
+        case 900:
+            guard params.count >= 2 else { return nil }
+            self = .RPL_LOGGEDIN(client: params[0], text: params[params.count-1])
+        case 901:
+            guard params.count >= 2 else { return nil }
+            self = .RPL_LOGGEDOUT(client: params[0], text: params[params.count-1])
         case 902:
             self = .ERR_NICKLOCKED
         case 903:

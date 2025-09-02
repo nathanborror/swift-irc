@@ -80,10 +80,23 @@ extension IRCSession {
         }
     }
 
+    public func sendCapEnd() async throws {
+        try await send("CAP END") { message -> Bool in
+            switch message.numeric {
+            case .RPL_WELCOME:
+                return true
+            default:
+                return false
+            }
+        }
+    }
+
     public func sendAuthentication(_ token: String) async throws {
         try await send("AUTHENTICATE PLAIN")
         try await send("AUTHENTICATE \(token)") { message -> Bool in
             switch message.numeric {
+            case .RPL_LOGGEDIN:
+                return true
             case .RPL_SASLSUCCESS:
                 return true
             default:
