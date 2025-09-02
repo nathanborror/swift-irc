@@ -69,8 +69,30 @@ extension IRCSession {
         }, expecting: expecting, timeout: .seconds(timeout))
     }
 
-    public func channelJoin(_ channel: String, fetchHistory: Bool = false) async throws {
+    public func sendCapRequest(_ capabilities: [String]) async throws {
+        try await send("CAP REQ :\(capabilities.joined(separator: " "))") { message -> Bool in
+            switch message.command {
+            case let .CAP(subcommand, _):
+                return subcommand == "ACK"
+            default:
+                return false
+            }
+        }
+    }
 
+    public func sendAuthentication(_ token: String) async throws {
+        try await send("AUTHENTICATE PLAIN")
+        try await send("AUTHENTICATE \(token)") { message -> Bool in
+            switch message.numeric {
+            case .RPL_SASLSUCCESS:
+                return true
+            default:
+                return false
+            }
+        }
+    }
+
+    public func channelJoin(_ channel: String, fetchHistory: Bool = false) async throws {
         try await send("JOIN \(channel)") { message -> Bool in
             switch (message.command, message.numeric) {
             case (.some(.JOIN(let ch)), _):
