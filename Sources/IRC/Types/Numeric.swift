@@ -428,6 +428,11 @@ public enum Numeric: Codable, Equatable, Sendable {
     /// # 902:
     case ERR_NICKLOCKED
 
+    /// # 903: <client> :SASL authentication successful
+    /// This numeric indicates that SASL authentication was completed successfully, and is normally sent along with RPL_LOGGEDIN (900). For more
+    /// information on this numeric, see the IRCv3 sasl-3.1 extension. The text used in the last param of this message varies wildly.
+    case RPL_SASLSUCCESS(client: String, text: String)
+
     /// # 904: <client> :SASL authentication failed
     /// This numeric indicates that SASL authentication failed because of invalid credentials or other errors not explicitly mentioned by other numerics. For more
     /// information on this numeric, see the IRCv3 sasl-3.1 extension. The text used in the last param of this message varies wildly.
@@ -617,7 +622,7 @@ public enum Numeric: Codable, Equatable, Sendable {
         case 396:
             self = .RPL_HOSTHIDDEN
 
-        // Errors
+        // Errors & Responses
 
         case 401:
             guard params.count >= 3 else { return nil }
@@ -708,6 +713,9 @@ public enum Numeric: Codable, Equatable, Sendable {
             self = .ERR_NOPRIVS
         case 902:
             self = .ERR_NICKLOCKED
+        case 903:
+            guard params.count >= 2 else { return nil }
+            self = .RPL_SASLSUCCESS(client: params[0], text: params[1])
         case 904:
             guard params.count >= 2 else { return nil }
             self = .ERR_SASLFAIL(client: params[0], text: params[1])
