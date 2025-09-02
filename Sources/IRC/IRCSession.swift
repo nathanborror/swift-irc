@@ -69,7 +69,7 @@ extension IRCSession {
         }, expecting: expecting, timeout: .seconds(timeout))
     }
 
-    public func sendCapRequest(_ capabilities: [String]) async throws {
+    public func sendCapRequest(_ capabilities: String...) async throws {
         try await send("CAP REQ :\(capabilities.joined(separator: " "))") { message -> Bool in
             switch message.command {
             case let .CAP(subcommand, _):
