@@ -42,7 +42,7 @@ struct MessageParsingTests {
             ":ergo.test 329 alice \(name) 1751058144",
         ]
 
-        try await alice.channelJoin(name)
+        Task { try await alice.channelJoin(name) }
         try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
@@ -77,7 +77,7 @@ struct MessageParsingTests {
             ":ergo.test 329 alice \(name) 1751134868",
             ":ergo.test 341 alice bob \(name)",
         ]
-        try await alice.channelJoin(name)
+        Task { try await alice.channelJoin(name) }
         try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
