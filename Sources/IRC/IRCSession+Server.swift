@@ -1,6 +1,7 @@
 import Foundation
 import OSLog
 import Network
+import Security
 
 private let logger = Logger(subsystem: "IRCServerSession", category: "IRC")
 
@@ -25,17 +26,17 @@ public class IRCSessionServer: IRCSession {
         self.server = server
     }
 
-    public func connect() async throws {
+    public func connect(options: IRCSessionOptions?) async throws {
         clearLogs()
 
         let host = server.config.server
         let port = NWEndpoint.Port(integerLiteral: server.config.port)
-        let tcp = NWProtocolTCP.Options()
-        tcp.noDelay = true
+        let tcp = NWProtocolTCP.Options(); tcp.noDelay = true
 
         let params: NWParameters
         if server.config.useTLS {
-            let tls = handleTLS(host)
+            let identity = try? handleLoadClientIdentity(label: options?.secIdentityLabel)
+            let tls = handleTLS(host, identity: identity)
             params = NWParameters(tls: tls, tcp: tcp)
         } else {
             params = NWParameters(tls: nil, tcp: tcp)
@@ -80,12 +81,34 @@ public class IRCSessionServer: IRCSession {
 
     // Private
 
-    private func handleTLS(_ host: String) -> NWProtocolTLS.Options {
-        let options = NWProtocolTLS.Options()
-        sec_protocol_options_set_tls_server_name(options.securityProtocolOptions, host)
-        sec_protocol_options_set_peer_authentication_required(options.securityProtocolOptions, true)
-        sec_protocol_options_set_min_tls_protocol_version(options.securityProtocolOptions, .TLSv12)
-        return options
+    private func handleTLS(_ host: String, identity: SecIdentity? = nil) -> NWProtocolTLS.Options {
+        let tls = NWProtocolTLS.Options()
+
+        if let identity {
+            sec_protocol_options_set_local_identity(tls.securityProtocolOptions, identity as! OS_sec_identity)
+        }
+        sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, host)
+        sec_protocol_options_set_peer_authentication_required(tls.securityProtocolOptions, true)
+        sec_protocol_options_set_min_tls_protocol_version(tls.securityProtocolOptions, .TLSv12)
+        return tls
+    }
+
+    private func handleLoadClientIdentity(label: String?) throws -> SecIdentity? {
+        guard let label else { return nil }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassIdentity,
+            kSecAttrLabel as String: label,
+            kSecReturnRef as String: true
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecSuccess {
+            return (item as! SecIdentity)
+        }
+        if status == errSecItemNotFound {
+            return nil
+        }
+        throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
     }
 
     private func handleStateUpdate(state: NWConnection.State) async throws {

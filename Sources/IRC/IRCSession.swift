@@ -42,6 +42,10 @@ public struct IRCPendingRequest {
     let timeout: Date
 }
 
+public struct IRCSessionOptions {
+    var secIdentityLabel: String?
+}
+
 @MainActor
 public protocol IRCSession: AnyObject, Sendable {
 
@@ -52,7 +56,7 @@ public protocol IRCSession: AnyObject, Sendable {
     var isAuthenticated: Bool { get }
     var error: IRCSessionError? { get set }
 
-    func connect() async throws
+    func connect(options: IRCSessionOptions?) async throws
     func disconnect() async throws
     func send(_ line: String) async throws
 }
