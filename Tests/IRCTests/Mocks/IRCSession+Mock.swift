@@ -17,7 +17,7 @@ public class IRCMockSession: IRCSession {
         self.server = server
     }
 
-    public func connect(options: IRCSessionOptions?) async throws {}
+    public func connect() async throws {}
     public func disconnect() async throws {}
 
     public func send(_ line: String) async throws {

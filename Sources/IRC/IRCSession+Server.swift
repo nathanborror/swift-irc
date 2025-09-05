@@ -26,7 +26,7 @@ public class IRCSessionServer: IRCSession {
         self.server = server
     }
 
-    public func connect(options: IRCSessionOptions?) async throws {
+    public func connect() async throws {
         clearLogs()
 
         let host = server.config.server
@@ -35,8 +35,7 @@ public class IRCSessionServer: IRCSession {
 
         let params: NWParameters
         if server.config.useTLS {
-            let identity = try? handleLoadClientIdentity(label: options?.secIdentityLabel)
-            let tls = handleTLS(host, identity: identity)
+            let tls = handleTLS(host)
             params = NWParameters(tls: tls, tcp: tcp)
         } else {
             params = NWParameters(tls: nil, tcp: tcp)
@@ -81,34 +80,12 @@ public class IRCSessionServer: IRCSession {
 
     // Private
 
-    private func handleTLS(_ host: String, identity: SecIdentity? = nil) -> NWProtocolTLS.Options {
+    private func handleTLS(_ host: String) -> NWProtocolTLS.Options {
         let tls = NWProtocolTLS.Options()
-
-        if let identity {
-            sec_protocol_options_set_local_identity(tls.securityProtocolOptions, identity as! OS_sec_identity)
-        }
         sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, host)
         sec_protocol_options_set_peer_authentication_required(tls.securityProtocolOptions, true)
         sec_protocol_options_set_min_tls_protocol_version(tls.securityProtocolOptions, .TLSv12)
         return tls
-    }
-
-    private func handleLoadClientIdentity(label: String?) throws -> SecIdentity? {
-        guard let label else { return nil }
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassIdentity,
-            kSecAttrLabel as String: label,
-            kSecReturnRef as String: true
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        if status == errSecSuccess {
-            return (item as! SecIdentity)
-        }
-        if status == errSecItemNotFound {
-            return nil
-        }
-        throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
     }
 
     private func handleStateUpdate(state: NWConnection.State) async throws {

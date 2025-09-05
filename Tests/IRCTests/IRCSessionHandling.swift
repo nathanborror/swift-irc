@@ -19,7 +19,7 @@ struct MessageParsingTests {
             ":ergo.test 005 alice TOPICLEN=390 UTF8ONLY WHOX draft/CHATHISTORY=1000 :are supported by this server",
         ]
 
-        try await alice.connect(options: nil)
+        try await alice.connect()
         try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
 
         #expect(alice.server.config.host == "ergo.test")
