@@ -23,15 +23,6 @@ public class IRCMockSession: IRCSession {
     public func send(_ line: String) async throws {
         print("not implemented")
     }
-
-    public func send(_ line: String, expecting: @escaping (Message) -> Bool, timeout: TimeInterval = 10) async throws {
-        print("not implemented")
-    }
-
-    public func send(_ line: String, expecting: @escaping (Message) -> Bool, timeout: TimeInterval) async throws -> Message {
-        print("not implemented")
-        return .init(kind: .server, raw: "")
-    }
 }
 
 extension IRCMockSession {
