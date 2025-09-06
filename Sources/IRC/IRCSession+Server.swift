@@ -18,12 +18,14 @@ public class IRCSessionServer: IRCSession {
     public var error: IRCSessionError? = nil
 
     private var connection: NWConnection? = nil
+    private var connectionIdentity: SecIdentity? = nil
     private var connectionQueue = DispatchQueue(label: "irc.wire", qos: .userInitiated)
     private var incomingDataBuffer = ""
     private var motdBuffer = ""
 
-    public init(_ server: Server) {
+    public init(_ server: Server, identity: SecIdentity? = nil) {
         self.server = server
+        self.connectionIdentity = identity
     }
 
     public func connect() async throws {
@@ -85,6 +87,10 @@ public class IRCSessionServer: IRCSession {
         sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, host)
         sec_protocol_options_set_peer_authentication_required(tls.securityProtocolOptions, true)
         sec_protocol_options_set_min_tls_protocol_version(tls.securityProtocolOptions, .TLSv12)
+
+        if let connectionIdentity, let value = sec_identity_create(connectionIdentity) {
+            sec_protocol_options_set_local_identity(tls.securityProtocolOptions, value)
+        }
         return tls
     }
 
