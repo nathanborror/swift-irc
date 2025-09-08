@@ -6,7 +6,6 @@ public struct Channel: Identifiable, Codable, Sendable {
     public var topic: Topic?
     public var users: [String: ChannelUser]
     public var modes: String?
-    public var password: String?
     public var limit: Int?
     public var bans: Set<String>
     public var messages: [Message]
@@ -28,14 +27,13 @@ public struct Channel: Identifiable, Codable, Sendable {
     }
 
     public init(name: String, key: String? = nil, topic: Topic? = nil, users: [String: ChannelUser] = [:],
-                modes: String? = nil, password: String? = nil, limit: Int? = nil, bans: Set<String> = [],
-                messages: [Message] = [], created: Date = .now) {
+                modes: String? = nil, limit: Int? = nil, bans: Set<String> = [], messages: [Message] = [],
+                created: Date = .now) {
         self.name = name
         self.key = key
         self.topic = topic
         self.users = users
         self.modes = modes
-        self.password = password
         self.limit = limit
         self.bans = bans
         self.messages = messages
@@ -50,7 +48,6 @@ public struct Channel: Identifiable, Codable, Sendable {
         existing.topic = channel.topic
         existing.users = channel.users
         existing.modes = channel.modes
-        existing.password = channel.password
         existing.limit = channel.limit
         existing.bans = channel.bans
         existing.messages = union(existing.messages, channel.messages)

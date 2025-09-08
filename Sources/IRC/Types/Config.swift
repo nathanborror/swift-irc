@@ -25,12 +25,6 @@ public struct Config: Codable, Identifiable, Equatable, Sendable {
     /// Email is necessary for registration.
     public var email: String?
 
-    /// Password is necessary for registration.
-    public var password: String?
-
-    /// Fingerprint necessary for SASL authentication
-    public var fingerprint: String?
-
     /// Current user modes set.
     public var modes: String?
 
@@ -55,10 +49,10 @@ public struct Config: Codable, Identifiable, Equatable, Sendable {
     }
 
     public init(kind: Kind = .network, server: String, port: UInt16, useTLS: Bool = true, nick: String, ident: String? = nil,
-                username: String, host: String? = nil, realname: String? = nil, email: String? = nil,
-                password: String? = nil, fingerprint: String? = nil, modes: String? = nil, motd: String? = nil,
-                capabilities: [String : Bool] = [:], availableUserModes: String? = nil, availableChannelModes: String? = nil,
-                availableChannelModesWithParameters: String? = nil, support: [String: Value] = [:]) {
+                username: String, host: String? = nil, realname: String? = nil, email: String? = nil, modes: String? = nil,
+                motd: String? = nil, capabilities: [String : Bool] = [:], availableUserModes: String? = nil,
+                availableChannelModes: String? = nil, availableChannelModesWithParameters: String? = nil,
+                support: [String: Value] = [:]) {
         self.kind = kind
         self.server = server
         self.port = port
@@ -69,8 +63,6 @@ public struct Config: Codable, Identifiable, Equatable, Sendable {
         self.host = host
         self.realname = realname
         self.email = email
-        self.password = password
-        self.fingerprint = fingerprint
         self.modes = modes
         self.motd = motd
         self.capabilities = capabilities

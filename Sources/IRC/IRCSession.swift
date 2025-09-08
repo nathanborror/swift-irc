@@ -145,8 +145,6 @@ extension IRCSession {
     public func nickServRegister(email: String, password: String) async throws {
         guard !isAuthenticated else { return }
         try await send("PRIVMSG NickServ :REGISTER \(password) \(email)")
-        server.config.email = email
-        server.config.password = password
     }
 
     public func nickServIdentify(password: String) async throws {
