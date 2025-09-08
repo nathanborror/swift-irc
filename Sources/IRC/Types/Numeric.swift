@@ -342,8 +342,10 @@ public enum Numeric: Codable, Equatable, Sendable {
     /// # 432:
     case ERR_ERRONEUSNICKNAME
 
-    /// # 433:
-    case ERR_NICKNAMEINUSE
+    /// # 433: <client> <nick> :Nickname is already in use
+    /// Returned when a NICK command cannot be successfully completed as the desired nickname is already in use on the network. The text used in the last
+    /// param of this message may vary.
+    case ERR_NICKNAMEINUSE(client: String, nick: String, text: String)
 
     /// # 436:
     case ERR_NICKCOLLISION
@@ -665,7 +667,8 @@ public enum Numeric: Codable, Equatable, Sendable {
         case 432:
             self = .ERR_ERRONEUSNICKNAME
         case 433:
-            self = .ERR_NICKNAMEINUSE
+            guard params.count >= 3 else { return nil }
+            self = .ERR_NICKNAMEINUSE(client: params[0], nick: params[1], text: params[2])
         case 436:
             self = .ERR_NICKCOLLISION
         case 441:

@@ -138,10 +138,13 @@ extension IRCSession {
         try await send("KICK \(channel) \(nick) :\(comment ?? "")")
     }
 
+    public func nickChange(_ newNick: String) async throws {
+        try await send("NICK \(newNick)")
+    }
+
     public func nickServRegister(email: String, password: String) async throws {
         guard !isAuthenticated else { return }
         try await send("PRIVMSG NickServ :REGISTER \(password) \(email)")
-
         server.config.email = email
         server.config.password = password
     }
@@ -452,6 +455,9 @@ extension IRCSession {
             server.config.motd = ""
         case .ERR_SASLFAIL:
             throw IRCSessionError.authenticationFailed
+        case let .ERR_NICKNAMEINUSE(_, nick, _):
+            let newNick = nick + "_"
+            try await nickChange(newNick)
 
         default:
             return
@@ -546,15 +552,11 @@ extension IRCSession {
         switch command {
         case "NICK":
             if let subcommdand = code.first, subcommdand == "NICKNAME_RESERVED" {
-                try await commandFAIL_NICKNAME_RESERVED(code[1])
+                let newNick = code[1] + "_"
+                try await nickChange(newNick)
             }
         default:
             break
         }
-    }
-
-    private func commandFAIL_NICKNAME_RESERVED(_ nick: String) async throws {
-        server.config.nick = nick + "_"
-        try await send("NICK \(server.config.nick)")
     }
 }
