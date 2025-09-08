@@ -11,19 +11,19 @@ public struct Config: Codable, Identifiable, Equatable, Sendable {
     public var nick: String
 
     /// Derived from the user's system login or identd service. If it cannot be verified, it may be prefixed with ~.
-    public var ident: String?
+    public var ident: String
 
     /// The account name when using SASL distinct from ident and nick. Often used interchangeably with ident in casual contexts.
     public var username: String
 
     /// The domain or IP address, can be an actual IP, hostname or cloaked value or privacy.
-    public var host: String?
+    public var host: String
 
     /// Optionally sent during registration (USER command) and not typically visible in normal messages.
-    public var realname: String?
+    public var realname: String
 
     /// Email is necessary for registration.
-    public var email: String?
+    public var email: String
 
     /// Current user modes set.
     public var modes: String?
@@ -48,8 +48,8 @@ public struct Config: Codable, Identifiable, Equatable, Sendable {
         "\(nick)@\(server)"
     }
 
-    public init(kind: Kind = .network, server: String, port: UInt16, useTLS: Bool = true, nick: String, ident: String? = nil,
-                username: String, host: String? = nil, realname: String? = nil, email: String? = nil, modes: String? = nil,
+    public init(kind: Kind = .network, server: String, port: UInt16, useTLS: Bool = true, nick: String, ident: String = "",
+                username: String = "", host: String = "", realname: String = "", email: String = "", modes: String? = nil,
                 motd: String? = nil, capabilities: [String : Bool] = [:], availableUserModes: String? = nil,
                 availableChannelModes: String? = nil, availableChannelModesWithParameters: String? = nil,
                 support: [String: Value] = [:]) {
