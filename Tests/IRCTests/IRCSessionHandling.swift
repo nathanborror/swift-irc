@@ -30,8 +30,11 @@ struct MessageParsingTests {
     @Test("Join channel")
     func joinChannel() async throws {
         let name = "#random"
-
         let alice = IRCMockSession.alice
+
+        // Detached to wait for expected responses
+        Task { try await alice.channelJoin(name) }
+
         let expected = [
             ":alice!~u@p7wgw3kynvpai.irc JOIN \(name)",
             ":ergo.test 353 alice = \(name) :@alice",
@@ -41,8 +44,6 @@ struct MessageParsingTests {
             ":ergo.test 324 alice \(name) +Cnt",
             ":ergo.test 329 alice \(name) 1751058144",
         ]
-
-        Task { try await alice.channelJoin(name) }
         try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
@@ -67,8 +68,11 @@ struct MessageParsingTests {
     @Test("Join secret keyed channel")
     func joinKeyedChannel() async throws {
         let name = "#private"
-
         let alice = IRCMockSession.alice
+
+        // Detached to wait for expected responses
+        Task { try await alice.channelJoin(name) }
+
         let expected = [
             ":alice!~u@p7wgw3kynvpai.irc JOIN \(name)",
             ":ergo.test 353 alice = \(name) :@alice",
@@ -77,7 +81,6 @@ struct MessageParsingTests {
             ":ergo.test 329 alice \(name) 1751134868",
             ":ergo.test 341 alice bob \(name)",
         ]
-        Task { try await alice.channelJoin(name) }
         try await alice.processIncomingString(expected.joined(separator: "\r\n")+"\r\n")
         #expect(alice.server.channels.count == 1)
 
@@ -88,7 +91,11 @@ struct MessageParsingTests {
         #expect(channel.isSecret)
 
         let bob = IRCMockSession.bob
-        let expectedForBob = [
+
+        // Detached to wait for expected responses, INVITE performs a JOIN
+        Task { try await bob.processIncomingString(":alice!~u@p7wgw3kynvpai.irc INVITE bob \(name)\r\n") }
+
+        let expectedForBob2 = [
             ":alice!~u@p7wgw3kynvpai.irc INVITE bob \(name)",
             ":bob!~u@p7wgw3kynvpai.irc JOIN \(name)",
             ":ergo.test 353 bob @ \(name) :@alice bob",
@@ -96,7 +103,8 @@ struct MessageParsingTests {
             ":ergo.test 324 bob \(name) +kCnst s3cr3t",
             ":ergo.test 329 bob \(name) 1751134868",
         ]
-        try await bob.processIncomingString(expectedForBob.joined(separator: "\r\n")+"\r\n")
+        try await bob.processIncomingString(expectedForBob2.joined(separator: "\r\n")+"\r\n")
+
         #expect(bob.server.channels.count == 1)
 
         let bobChannel = try bob.getChannel(name)
