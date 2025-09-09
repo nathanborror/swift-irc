@@ -287,13 +287,10 @@ extension IRCSession {
             // Check pending requests
             await registry.deliver(message)
 
-            // Connection maintenance
-            switch message.command {
-            case .PING:
-                let pong = "PONG \(message.params[0])"
-                try await send(pong)
-            default:
-                break
+            // Maintain connection (not logged)
+            if case .PING(let token) = message.command {
+                try await send("PONG \(token)")
+                return
             }
 
             // Upsert new line to config object
