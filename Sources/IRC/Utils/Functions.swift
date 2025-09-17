@@ -1,17 +1,8 @@
 import Foundation
 
-/// Returns a list of unique items based on the given lists of identifiable items.
-func union<T: Identifiable>(_ lists: [T]...) -> [T] {
-    var seen: [T.ID: T] = [:]
-    for list in lists {
-        for item in list {
-            seen[item.id] = item
-        }
-    }
-    return Array(seen.values)
-}
+// MARK: Public
 
-func parseMessage(_ input: String) -> Message? {
+public func parseMessage(_ input: String) -> Message? {
     var rest = input[...]
 
     // 1. Parse tags
@@ -95,6 +86,8 @@ func parseMessage(_ input: String) -> Message? {
     return message
 }
 
+// MARK: Private
+
 func parseMessagePrefix(_ message: inout Message) {
     guard let prefix = message.prefix else { return }
     if let exclam = prefix.firstIndex(of: "!") {
@@ -138,6 +131,17 @@ func parseTime(_ input: String?) -> Date? {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return formatter.date(from: input)
+}
+
+/// Returns a list of unique items based on the given lists of identifiable items.
+func union<T: Identifiable>(_ lists: [T]...) -> [T] {
+    var seen: [T.ID: T] = [:]
+    for list in lists {
+        for item in list {
+            seen[item.id] = item
+        }
+    }
+    return Array(seen.values)
 }
 
 let knownServices: Set<String> = [
