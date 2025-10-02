@@ -83,7 +83,7 @@ extension IRCSession {
     public func sendCapEnd() async throws {
         try await send("CAP END") { message -> Bool in
             switch message.numeric {
-            case .RPL_WELCOME:
+            case .RPL_ENDOFMOTD, .ERR_NOMOTD:
                 return true
             default:
                 return false
